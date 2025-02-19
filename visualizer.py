@@ -14,10 +14,11 @@ class Visualizer:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Ship Grid Visualization")
 
-        # load emoji-compatible font (tries several common emoji fonts)
+        # Use a smaller font size (80% of cell size) to create padding in the cell.
+        emoji_font_size = int(self.cell_size * 0.6)
         self.emoji_font = pygame.font.Font(
             pygame.font.match_font("segoeuiemoji, noto color emoji, apple color emoji"),
-            self.cell_size
+            emoji_font_size
         )
         # Default emoji for robot (we will use literals for fire and button below)
         self.robot_emoji = "🤖"
@@ -36,7 +37,7 @@ class Visualizer:
                 pygame.draw.rect(self.screen, (200, 200, 200), rect, 1)  # Light gray grid lines
 
                 # Draw fire emoji if the cell is burning.
-                if self.ship.get_cell(row, col).on_fire:
+                if cell.on_fire:
                     emoji_surface = self.emoji_font.render("🔥", True, (255, 255, 255))
                     emoji_width, emoji_height = emoji_surface.get_size()
                     emoji_x = col * self.cell_size + (self.cell_size - emoji_width) // 2
