@@ -2,6 +2,9 @@ from ship import Ship
 from visualizer import Visualizer
 from environment import Environment
 
+
+# TODO ensure grader runs using Python 3.6
+# TODO should the button catch on fire?
 def main():
     ship = Ship(dimension=20)
     ship.generate_maze()
