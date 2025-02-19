@@ -67,7 +67,6 @@ db.sqlite3
 
 # PyCharm
 *.iml
-.idea/
 
 # macOS
 .DS_Store
