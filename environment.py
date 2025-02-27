@@ -1,5 +1,6 @@
 from collections import deque
 import random
+import heapq
 from bot import Bot
 
 class Environment:
@@ -21,7 +22,7 @@ class Environment:
         bot_cell, self.button_cell, fire_cell = random.sample(open_cells, 3)
         fire_cell.ignite()
         self.bot = Bot(ship, bot_cell.row, bot_cell.col)
-
+        self.queue = deque()
 
     def update_fire(self):
         """
@@ -64,42 +65,104 @@ class Environment:
 
         curr_bot_cell = self.ship.get_cell(m, n)
 
-        q = deque()
-        q.append((m, n))
-
+        self.queue.append((m, n))
         dx = [-1, 0, 1, 0]
         dy = [0, 1, 0, -1]
 
-        ship_row = 40
-        ship_col = 40
+        ship_row = self.ship.dimension
+        ship_col = self.ship.dimension
 
         dis = [[-1 for _ in range(ship_col)] for _ in range(ship_row)]
 
         dis[m][n] = 0
 
-        while q:
-            ind = q.popleft()
+        ind = self.queue.popleft()
 
-            for i in range(4):
-                x = ind[0] + dx[i]
-                y = ind[1] + dy[i]
 
-                if 0 <= x < ship_row and 0 <= y < ship_col and dis[x][y] == -1:
-                    dis[x][y] = dis[ind[0]][ind[1]] + 1
-                    new_cell = self.ship.get_cell(x, y)
-                    q.append((x, y))
-                    if new_cell.is_on_fire():
-                        return "failure"
-                    if new_cell is self.button_cell:
-                        # Button pressed: fire is instantly extinguished
-                        for cell in self.ship.get_on_fire_cells():
-                            cell.extinguish()
-                        return "success"
+        for i in range(4):
+            x = ind[0] + dx[i]
+            y = ind[1] + dy[i]
+
+            if 0 <= x < ship_row and 0 <= y < ship_col and dis[x][y] == -1:
+                dis[x][y] = dis[ind[0]][ind[1]] + 1
+                new_cell = self.ship.get_cell(x, y)
+                if new_cell.is_on_fire():
+                    return "failure"
+                if new_cell is self.button_cell:
+                    # Button pressed: fire is instantly extinguished
+                    for cell in self.ship.get_on_fire_cells():
+                        cell.extinguish()
+                    return "success"
     # Move the bot to the next position in the queue
-        if q:
-            next_pos = q.popleft()
+        if self.queue:
+            next_pos = self.queue.popleft()
             self.bot.move(next_pos[0], next_pos[1])
             print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
+
+        # Update the fire after the bot has moved
+        self.update_fire()
+
+        # Check if the bot is on fire after the fire update
+        if self.ship.get_cell(self.bot.row, self.bot.col).is_on_fire():
+            print(f"Bot caught on fire after move at: ({self.bot.row}, {self.bot.col})")
+            return "failure"
+        else:
+            return "ongoing"
+        
+        print("Simulation ongoing...")
+        return "ongoing"
+
+
+    def tick_using_a(self):
+        """Returns:
+            A string indicating the simulation status:
+            - "ongoing" if the simulation should continue,
+            - "success" if the bot has reached the button (and the fire is extinguished),
+            - "failure" if the bot is caught by the fire.
+        """
+        m, n = self.bot.row, self.bot.col
+        goal = (self.button_cell.row, self.button_cell.col)
+
+        open_set = []
+        heapq.heappush(open_set, (0, (m, n)))
+
+        came_from = {}
+        g_score = { (m, n): 0 }
+        f_score = { (m, n): heuristic((m, n), goal) }
+
+        dx = [-1, 0, 1, 0]
+        dy = [0, 1, 0, -1]
+
+        rows, cols = self.ship.get_dimensions()
+
+        while open_set:
+            current = heapq.heappop(open_set)[1]
+
+            if current == goal:
+                # Reconstruct path and move bot
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.reverse()
+                if path:
+                    next_pos = path[0]
+                    self.bot.move(next_pos[0], next_pos[1])
+                    print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
+                # Button pressed: fire is instantly extinguished
+                for cell in self.ship.get_on_fire_cells():
+                    cell.extinguish()
+                return "success"
+
+            for i in range(4):
+                neighbor = (current[0] + dx[i], current[1] + dy[i])
+                if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols:
+                    tentative_g_score = g_score[current] + 1
+                    if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal)
+                        heapq.heappush(open_set, (f_score[neighbor], neighbor))
 
         # Update the fire after the bot has moved
         self.update_fire()
@@ -111,4 +174,8 @@ class Environment:
 
         print("Simulation ongoing...")
         return "ongoing"
-        
+
+
+    def heuristic(a, b):
+        """Calculate the Manhattan distance heuristic."""
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])

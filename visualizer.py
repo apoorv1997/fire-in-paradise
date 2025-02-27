@@ -94,17 +94,18 @@ class Visualizer:
 
                     # if direction is not None:
                         # Call a simulation tick whenever an arrow key is pressed.
-                    result = self.env.tick()
-                    if result == "failure":
-                        print("Simulation failure!")
-                        running = False
-                    elif result == "success":
-                        print("Simulation success!")
-                        running = False
-                    elif result == "ongoing":
-                        print("Simulation ongoing...")
+                result = self.env.tick()
+                if result == "failure":
+                    print("Simulation failure!")
+                    running = False
+                    break
+                elif result == "success":
+                    print("Simulation success!")
+                    running = False
+                elif result == "ongoing":
+                    print("Simulation ongoing...")
 
-            self.draw_grid(bot_active=True)
-            clock.tick(10)  # Limit frame rate to 10 FPS
+                self.draw_grid(bot_active=True)
+                clock.tick(1)  # Limit frame rate to 10 FPS
 
         pygame.quit()
