@@ -24,6 +24,8 @@ class Environment:
         fire_cell.ignite()
         self.bot = Bot(ship, bot_cell.row, bot_cell.col)
         self.queue = deque()
+        # pre calculate path after env creation
+        self.path = self.bfs_shortest_path()
 
     def update_fire(self):
         """
@@ -45,7 +47,7 @@ class Environment:
             new_fire.ignite()
 
     def bfs_shortest_path(self):
-        rows, cols = self.ship.get_dimensions()
+        rows, cols = self.ship.dimension, self.ship.dimension
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
         bot_pos = (self.bot.row, self.bot.col)
         button_pos = (self.button_cell.row, self.button_cell.col)
@@ -90,55 +92,73 @@ class Environment:
 
         curr_bot_cell = self.ship.get_cell(m, n)
 
-        self.queue.append((m, n))
-        
-        dx = [-1, 0, 1, 0]
-        dy = [0, 1, 0, -1]
+        if self.path:
+            next_pos = self.path.pop(0)
+        self.bot.move(next_pos[0], next_pos[1])
+        print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
 
-        ship_row = self.ship.dimension
-        ship_col = self.ship.dimension
-
-        dis = [[-1 for _ in range(ship_col)] for _ in range(ship_row)]
-
-        dis[m][n] = 0
-
-        ind = self.queue.popleft()
-
-
-        for i in range(4):
-            x = ind[0] + dx[i]
-            y = ind[1] + dy[i]
-
-            if 0 <= x < ship_row and 0 <= y < ship_col and dis[x][y] == -1:
-                dis[x][y] = dis[ind[0]][ind[1]] + 1
-                new_cell = self.ship.get_cell(x, y)
-                if new_cell.is_on_fire():
-                    continue
-                if new_cell is self.button_cell:
-                    # Button pressed: fire is instantly extinguished
-                    for cell in self.ship.get_on_fire_cells():
-                        cell.extinguish()
-                    return "success"
-                else:
-                    self.queue.append((x, y))
-    # Move the bot to the next position in the queue
-        if self.queue:
-            next_pos = self.queue.popleft()
-            self.bot.move(next_pos[0], next_pos[1])
-            print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
-
-        # Update the fire after the bot has moved
         self.update_fire()
 
-        # Check if the bot is on fire after the fire update
         if self.ship.get_cell(self.bot.row, self.bot.col).is_on_fire():
             print(f"Bot caught on fire after move at: ({self.bot.row}, {self.bot.col})")
             return "failure"
-        else:
-            return "ongoing"
+        if self.ship.get_cell(self.bot.row, self.bot.col) is self.button_cell:
+            # Button pressed: fire is instantly extinguished
+            for cell in self.ship.get_on_fire_cells():
+                cell.extinguish()
+            return "success"
         
         print("Simulation ongoing...")
         return "ongoing"
+    #     self.queue.append((m, n))
+        
+    #     dx = [-1, 0, 1, 0]
+    #     dy = [0, 1, 0, -1]
+
+    #     ship_row = self.ship.dimension
+    #     ship_col = self.ship.dimension
+
+    #     dis = [[-1 for _ in range(ship_col)] for _ in range(ship_row)]
+
+    #     dis[m][n] = 0
+
+    #     ind = self.queue.popleft()
+
+
+    #     for i in range(4):
+    #         x = ind[0] + dx[i]
+    #         y = ind[1] + dy[i]
+
+    #         if 0 <= x < ship_row and 0 <= y < ship_col and dis[x][y] == -1:
+    #             dis[x][y] = dis[ind[0]][ind[1]] + 1
+    #             new_cell = self.ship.get_cell(x, y)
+    #             if new_cell.is_on_fire():
+    #                 continue
+    #             if new_cell is self.button_cell:
+    #                 # Button pressed: fire is instantly extinguished
+    #                 for cell in self.ship.get_on_fire_cells():
+    #                     cell.extinguish()
+    #                 return "success"
+    #             else:
+    #                 self.queue.append((x, y))
+    # # Move the bot to the next position in the queue
+    #     if self.queue:
+    #         next_pos = self.queue.popleft()
+    #         self.bot.move(next_pos[0], next_pos[1])
+    #         print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
+
+    #     # Update the fire after the bot has moved
+    #     self.update_fire()
+
+    #     # Check if the bot is on fire after the fire update
+    #     if self.ship.get_cell(self.bot.row, self.bot.col).is_on_fire():
+    #         print(f"Bot caught on fire after move at: ({self.bot.row}, {self.bot.col})")
+    #         return "failure"
+    #     else:
+    #         return "ongoing"
+        
+    #     print("Simulation ongoing...")
+    #     return "ongoing"
 
 
     def tick_using_a(self):

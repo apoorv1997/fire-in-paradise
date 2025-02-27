@@ -94,7 +94,6 @@ class Visualizer:
 
                     # if direction is not None:
                         # Call a simulation tick whenever an arrow key is pressed.
-                path = self.env.bfs()
                 result = self.env.tick()
                 if result == "failure":
                     print("Simulation failure!")
@@ -103,6 +102,7 @@ class Visualizer:
                 elif result == "success":
                     print("Simulation success!")
                     running = False
+                    break
                 elif result == "ongoing":
                     print("Simulation ongoing...")
 
