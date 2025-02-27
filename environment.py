@@ -44,6 +44,30 @@ class Environment:
         for new_fire in new_fire_cells:
             new_fire.ignite()
 
+    def bfs_shortest_path(self):
+        rows, cols = self.ship.get_dimensions()
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        bot_pos = (self.bot.row, self.bot.col)
+        button_pos = (self.button_cell.row, self.button_cell.col)
+        queue = deque([(bot_pos, [bot_pos])])  # Store (current position, path taken)
+        visited = set()
+        visited.add(bot_pos)
+        
+        while queue:
+            (x, y), path = queue.popleft()
+            
+            if (x, y) == button_pos:
+                return path  # Return the shortest path
+            
+            for dx, dy in directions:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < rows and 0 <= ny < cols and self.ship.get_cell(nx, ny).is_open() and (nx, ny) not in visited:
+                    queue.append(((nx, ny), path + [(nx, ny)]))
+                    visited.add((nx, ny))
+        
+        return None
+    
+
     def tick(self):
         """
         Returns:
