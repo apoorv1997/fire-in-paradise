@@ -1,3 +1,4 @@
+from collections import deque
 import random
 from bot import Bot
 
@@ -41,7 +42,7 @@ class Environment:
         for new_fire in new_fire_cells:
             new_fire.ignite()
 
-    def tick(self, bot_direction):
+    def tick(self):
         """
         Returns:
             A string indicating the simulation status:
@@ -50,26 +51,64 @@ class Environment:
               - "failure" if the bot is caught by the fire.
         """
         # TODO should an invalid direction (ie hitting a wall) be allowed and be considered a "tick"?
+        # create a queue to push the bot's new position
+        # move the bot
+        # check for neighbours and look for bot's new position.
+        # update ship status.
         # direction the bot should move: "up", "down", "left", or "right"
-        self.bot.move(bot_direction)
-        curr_bot_cell = self.ship.get_cell(self.bot.row, self.bot.col)
+        print(self.bot.row)
+        print(self.bot.col)
+        m = self.bot.row
+        n = self.bot.col
 
-        # Immediately check if the bot has moved into a burning cell.
-        if curr_bot_cell.is_on_fire():
-            return "failure"
 
-        # Check if the bot has reached the button.
-        if curr_bot_cell is self.button_cell:
-            # Button pressed: fire is instantly extinguished
-            for cell in self.ship.get_on_fire_cells():
-                cell.extinguish()
-            return "success"
+        curr_bot_cell = self.ship.get_cell(m, n)
 
-        # Advance the fire
+        q = deque()
+        q.append((m, n))
+
+        dx = [-1, 0, 1, 0]
+        dy = [0, 1, 0, -1]
+
+        ship_row = 40
+        ship_col = 40
+
+        dis = [[-1 for _ in range(ship_col)] for _ in range(ship_row)]
+
+        dis[m][n] = 0
+
+        while q:
+            ind = q.popleft()
+
+            for i in range(4):
+                x = ind[0] + dx[i]
+                y = ind[1] + dy[i]
+
+                if 0 <= x < ship_row and 0 <= y < ship_col and dis[x][y] == -1:
+                    dis[x][y] = dis[ind[0]][ind[1]] + 1
+                    new_cell = self.ship.get_cell(x, y)
+                    q.append((x, y))
+                    if new_cell.is_on_fire():
+                        return "failure"
+                    if new_cell is self.button_cell:
+                        # Button pressed: fire is instantly extinguished
+                        for cell in self.ship.get_on_fire_cells():
+                            cell.extinguish()
+                        return "success"
+    # Move the bot to the next position in the queue
+        if q:
+            next_pos = q.popleft()
+            self.bot.move(next_pos[0], next_pos[1])
+            print(f"Bot moved to: ({next_pos[0]}, {next_pos[1]})")
+
+        # Update the fire after the bot has moved
         self.update_fire()
 
-        # Check again whether the fire has reached the bot
-        if curr_bot_cell.is_on_fire():
+        # Check if the bot is on fire after the fire update
+        if self.ship.get_cell(self.bot.row, self.bot.col).is_on_fire():
+            print(f"Bot caught on fire after move at: ({self.bot.row}, {self.bot.col})")
             return "failure"
 
+        print("Simulation ongoing...")
         return "ongoing"
+        

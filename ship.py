@@ -17,6 +17,9 @@ class Ship:
         return 0 <= row < self.dimension and 0 <= col < self.dimension
 
 
+    def get_dimension(self):
+        return self.dimension
+    
     def set_cell_neighbors(self):
         """Set valid neighbors for each cell in the grid."""
         for row in self.grid:

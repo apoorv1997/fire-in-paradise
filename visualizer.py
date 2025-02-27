@@ -70,8 +70,8 @@ class Visualizer:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-        pygame.quit()
-
+        pygame.display.quit()
+    
     def draw_grid_with_interactive_robot(self):
         """Interactive loop where each arrow key press triggers a simulation tick and redraws the grid."""
         running = True
@@ -81,28 +81,28 @@ class Visualizer:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN and self.env is not None:
-                    direction = None
-                    if event.key == pygame.K_UP:
-                        direction = "up"
-                    elif event.key == pygame.K_DOWN:
-                        direction = "down"
-                    elif event.key == pygame.K_LEFT:
-                        direction = "left"
-                    elif event.key == pygame.K_RIGHT:
-                        direction = "right"
+                # elif event.type == pygame.KEYDOWN and self.env is not None:
+                #     direction = None
+                #     if event.key == pygame.K_UP:
+                #         direction = "up"
+                #     elif event.key == pygame.K_DOWN:
+                #         direction = "down"
+                #     elif event.key == pygame.K_LEFT:
+                #         direction = "left"
+                #     elif event.key == pygame.K_RIGHT:
+                #         direction = "right"
 
-                    if direction is not None:
+                    # if direction is not None:
                         # Call a simulation tick whenever an arrow key is pressed.
-                        result = self.env.tick(direction)
-                        if result == "failure":
-                            print("Simulation failure!")
-                            running = False
-                        elif result == "success":
-                            print("Simulation success!")
-                            running = False
-                        elif result == "ongoing":
-                            print("Simulation ongoing...")
+                    result = self.env.tick()
+                    if result == "failure":
+                        print("Simulation failure!")
+                        running = False
+                    elif result == "success":
+                        print("Simulation success!")
+                        running = False
+                    elif result == "ongoing":
+                        print("Simulation ongoing...")
 
             self.draw_grid(bot_active=True)
             clock.tick(10)  # Limit frame rate to 10 FPS
