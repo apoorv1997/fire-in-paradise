@@ -1,12 +1,11 @@
 class Bot:
-    def __init__(self, ship, row, col):
+    def __init__(self, cell, ship):
         self.ship = ship
-        self.row = row
-        self.col = col
+        self.cell = cell
 
     def move(self, direction):
-        """Moves the bot in the specified direction if the cell is open."""
-        new_row, new_col = self.row, self.col
+        """Moves the bot in the chosen direction if valid"""
+        new_row, new_col = self.cell.row, self.cell.col
 
         if direction == "up":
             new_row -= 1
@@ -17,10 +16,11 @@ class Bot:
         elif direction == "right":
             new_col += 1
         else:
-            return
+            raise ValueError("Invalid chosen direction")
 
-        # Only move if within bounds and the target cell is open
         if self.ship.cell_in_bounds(new_row, new_col):
             target_cell = self.ship.get_cell(new_row, new_col)
             if target_cell.open:
-                self.row, self.col = new_row, new_col
+                self.cell = target_cell
+                return
+        raise ValueError("Invalid move made")
