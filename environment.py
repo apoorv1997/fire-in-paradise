@@ -20,6 +20,7 @@ class Environment:
 
         # Randomly select three distinct open cells
         bot_cell, self.button_cell, fire_cell = random.sample(open_cells, 3)
+        print(bot_cell,fire_cell)
         fire_cell.ignite()
         self.bot = Bot(ship, bot_cell.row, bot_cell.col)
         self.queue = deque()
@@ -66,6 +67,7 @@ class Environment:
         curr_bot_cell = self.ship.get_cell(m, n)
 
         self.queue.append((m, n))
+        
         dx = [-1, 0, 1, 0]
         dy = [0, 1, 0, -1]
 
@@ -87,12 +89,14 @@ class Environment:
                 dis[x][y] = dis[ind[0]][ind[1]] + 1
                 new_cell = self.ship.get_cell(x, y)
                 if new_cell.is_on_fire():
-                    return "failure"
+                    continue
                 if new_cell is self.button_cell:
                     # Button pressed: fire is instantly extinguished
                     for cell in self.ship.get_on_fire_cells():
                         cell.extinguish()
                     return "success"
+                else:
+                    self.queue.append((x, y))
     # Move the bot to the next position in the queue
         if self.queue:
             next_pos = self.queue.popleft()
