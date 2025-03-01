@@ -1,11 +1,12 @@
 import pygame
 
 class Visualizer:
-    def __init__(self, ship, cell_size=30, env=None):
+    def __init__(self, ship, cell_size=4, env=None):
         self.ship = ship
         self.cell_size = cell_size
         self.width = ship.dimension * cell_size
         self.height = ship.dimension * cell_size
+        self.bot_pos = []
         self.env = env
         # If an environment is passed, get the bot from it.
         self.bot = env.bot if env is not None else None
@@ -17,7 +18,7 @@ class Visualizer:
         # load emoji-compatible font (tries several common emoji fonts)
         self.emoji_font = pygame.font.Font(
             pygame.font.match_font("segoeuiemoji, noto color emoji, apple color emoji"),
-            self.cell_size
+            2
         )
         # Default emoji for robot (we will use literals for fire and button below)
         self.robot_emoji = "🤖"
@@ -50,6 +51,13 @@ class Visualizer:
                     emoji_y = row * self.cell_size + (self.cell_size - emoji_height) // 2
                     self.screen.blit(emoji_surface, (emoji_x, emoji_y))
 
+                if (row, col) in self.bot_pos:
+                    emoji_surface = self.emoji_font.render("🔹", True, (255, 255, 255))
+                    emoji_width, emoji_height = emoji_surface.get_size()
+                    emoji_x = col * self.cell_size + (self.cell_size - emoji_width) // 2
+                    emoji_y = row * self.cell_size + (self.cell_size - emoji_height) // 2
+                    self.screen.blit(emoji_surface, (emoji_x, emoji_y))
+
                 # Finally, if the bot is on this cell, draw the robot emoji on top.
                 if bot_active and self.bot is not None and self.bot.row == row and self.bot.col == col:
                     emoji_surface = self.emoji_font.render(self.robot_emoji, True, (255, 255, 255))
@@ -57,6 +65,8 @@ class Visualizer:
                     emoji_x = col * self.cell_size + (self.cell_size - emoji_width) // 2
                     emoji_y = row * self.cell_size + (self.cell_size - emoji_height) // 2
                     self.screen.blit(emoji_surface, (emoji_x, emoji_y))
+                    self.bot_pos.append((row, col))
+                
 
         pygame.display.flip()
 
@@ -94,7 +104,7 @@ class Visualizer:
 
                     # if direction is not None:
                         # Call a simulation tick whenever an arrow key is pressed.
-                result = self.env.tick()
+                result = self.env.a_star_more_risk()
                 if result == "failure":
                     print("Simulation failure!")
                     running = False
@@ -107,6 +117,6 @@ class Visualizer:
                     print("Simulation ongoing...")
 
                 self.draw_grid(bot_active=True)
-                clock.tick(1)  # Limit frame rate to 10 FPS
+                clock.tick(3)  # Limit frame rate to 10 FPS
 
         pygame.quit()
