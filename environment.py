@@ -1,6 +1,5 @@
 from collections import deque
 import random
-import matplotlib.pyplot as plt
 import heapq
 from bot import Bot
 
@@ -345,10 +344,10 @@ class Environment:
                     fire_time[nx][ny] = t + 1
                     queue.append((nx, ny, t + 1))
         
-        plt.imshow(fire_time, cmap='coolwarm', interpolation='nearest')
-        plt.colorbar(label='Fire Arrival Time / Path')
-        plt.title('Fire Spread and Bot Path')
-        plt.show()
+        # plt.imshow(fire_time, cmap='coolwarm', interpolation='nearest')
+        # plt.colorbar(label='Fire Arrival Time / Path')
+        # plt.title('Fire Spread and Bot Path')
+        # plt.show()
         return fire_time
 
     @staticmethod

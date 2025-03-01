@@ -1,3 +1,5 @@
+import json
+
 class Cell:
     def __init__(self, row: int, col: int):
         self.neighbors = []
@@ -48,3 +50,16 @@ class Cell:
     def __repr__(self):
         # Return string representation of the cell
         return '⬜' if self.open else '⬛'
+
+    def to_Json(self):
+        return {
+            'row': self.row,
+            'col': self.col,
+            'open': self.open,
+            'on_fire': self.on_fire
+        }
+class CellEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Cell):
+            return obj.to_Json()
+        return json.JSONEncoder.default(self, obj)

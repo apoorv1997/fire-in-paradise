@@ -40,7 +40,10 @@ class Ship:
         """Return list of open cells"""
         return [cell for row in self.grid for cell in row if cell.open]
 
-
+    def get_closed_cells(self):
+        """Return list of closed cells"""
+        return [cell for row in self.grid for cell in row if not cell.open]
+    
     def get_on_fire_cells(self):
         """Return list of cells that are on fire"""
         return [cell for cell in self.get_open_cells() if cell.on_fire]
