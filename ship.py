@@ -11,6 +11,7 @@ class Ship:
             for row in range(dimension)
         ]
         self.set_cell_neighbors()
+        self.generate_maze()
 
     def cell_in_bounds(self, row, col):
         return 0 <= row < self.dimension and 0 <= col < self.dimension
@@ -74,7 +75,7 @@ class Ship:
         open_count = sum(cell.is_open() for row in self.grid for cell in row)
         total = self.dimension * self.dimension
         percent_open = open_count / total * 100
-        print(f"Sanity Check: {percent_open:.2f}% of the ship is open before performing dead-end openings")
+        # print(f"Sanity Check: {percent_open:.2f}% of the ship is open before performing dead-end openings")
 
         # --- Phase 2: Open dead ends ---
         dead_end_cells = self.get_dead_end_cells()

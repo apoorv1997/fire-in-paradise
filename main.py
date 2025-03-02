@@ -8,7 +8,7 @@ def main():
 
     ship_dimension = 20  # dimension sets the nxn ship grid size
     q = 0.6  # flammability parameter 0-1 (higher q = more flammable cells)
-    cell_size = 20  # Size of each cell in pixels on rendered grid
+    cell_size = 40  # Size of each cell in pixels on rendered grid
     realtime = True  # Set True for real-time simulation, False for static display at terminal state
     tick_interval = 0.5 # seconds between each tick in real-time simulation
 
@@ -18,11 +18,10 @@ def main():
     # 2: Bot 2 (replan each timestep, blocking burning cells),
     # 3: Bot 3 (replan each timestep, blocking burning cells and, if possible, cells adjacent to fire)
     # 4: Bot 4 (custom strategy)
-    strategy = 1
+    strategy = 4
 
 
     ship = Ship(ship_dimension)
-    ship.generate_maze()
     env = Environment(ship, q)
     viz = Visualizer(ship, cell_size, env)
 

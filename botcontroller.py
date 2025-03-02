@@ -144,7 +144,7 @@ class BotController:
 
     def predict_fire_spread(self):
         """
-        Predicts the arrival time of fire for each cell using multi-source BFS.
+        Predicts the arrival time of fire for each cell using single-source BFS.
         Returns a dictionary mapping each cell (from self.env.ship) to its predicted fire arrival time.
         Cells that the fire cannot reach will have a value of infinity.
         """
@@ -156,10 +156,10 @@ class BotController:
                 cell = self.env.ship.get_cell(row, col)
                 fire_times[cell] = float('inf')
         queue = deque()
-        # Start from all cells that are currently on fire.
-        for cell in self.env.ship.get_on_fire_cells():
-            fire_times[cell] = 0
-            queue.append(cell)
+        # Use the single initial fire cell as the source.
+        initial_fire = self.env.initial_fire_cell
+        fire_times[initial_fire] = 0
+        queue.append(initial_fire)
         while queue:
             current = queue.popleft()
             current_time = fire_times[current]
