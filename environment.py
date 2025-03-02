@@ -1,4 +1,3 @@
-# environment.py
 import random
 from bot import Bot
 
@@ -18,31 +17,33 @@ class Environment:
 
         # Randomly select three distinct open cells to initialize the bot, button, and fire
         bot_cell, self.button_cell, fire_cell = random.sample(open_cells, 3)
-        fire_cell.ignite()
+        self.ship.ignite_cell(fire_cell)
         self.initial_fire_cell = fire_cell
         self.bot = Bot(bot_cell, self.ship)
+        self.initial_bot_cell = bot_cell
 
         # Record the robot's path (starting with its initial cell)
         self.bot_path = [bot_cell]
-        # Record every cell that gets ignited during the simulation
-        self.history_fire = {fire_cell}
 
     def update_fire(self):
         """
         Update fire spread for one timestep. Each open cell (not already burning) with
-        burning neighbors catches fire with probability 1 - (1 - q)^K
+        burning neighbors catches fire with probability 1 - (1 - q)^K.
         """
-        new_fire_cells = []
-        for cell in self.ship.get_open_cells():
-            if not cell.on_fire:
-                burning_neighbor_sum = cell.count_burning_neighbors()
-                if burning_neighbor_sum > 0:
-                    probability = 1 - (1 - self.q) ** burning_neighbor_sum
-                    if random.random() < probability:
-                        new_fire_cells.append(cell)
+        new_fire_cells = set()
+        # Use a set comprehension to gather candidate neighbors from burning cells.
+        candidate_cells = {neighbor for cell in self.ship.on_fire_cells
+                           for neighbor in cell.neighbors
+                           if neighbor.is_open() and not neighbor.on_fire}
+
+        for cell in candidate_cells:
+            burning_neighbors = sum(1 for n in cell.neighbors if n.is_on_fire())
+            if burning_neighbors > 0:
+                probability = 1 - (1 - self.q) ** burning_neighbors
+                if random.random() < probability:
+                    new_fire_cells.add(cell)
         for new_fire in new_fire_cells:
-            new_fire.ignite()
-            self.history_fire.add(new_fire)
+            self.ship.ignite_cell(new_fire)
 
     def tick(self, bot_direction):
         """
@@ -62,7 +63,7 @@ class Environment:
 
         if curr_bot_cell is self.button_cell:
             for cell in self.ship.get_on_fire_cells():
-                cell.extinguish()
+                self.ship.extinguish_cell(cell)
             return "success"
 
         self.update_fire()
@@ -71,3 +72,15 @@ class Environment:
             return "failure"
 
         return "ongoing"
+
+    def reset(self):
+        """
+        Reset the environment to its initial state
+        """
+        for cell in self.ship.get_on_fire_cells():
+            self.ship.extinguish_cell(cell)
+        self.bot.cell = self.initial_bot_cell
+        self.bot_path = [self.bot.cell]
+        self.ship.ignite_cell(self.initial_fire_cell)
+        self.ship.history_fire_cells.clear()
+

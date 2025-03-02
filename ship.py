@@ -5,6 +5,8 @@ class Ship:
     def __init__(self, dimension=40):
         self.dimension = dimension
         self.initial_cell = None
+        self.on_fire_cells = set()
+        self.history_fire_cells = set()
         # 2D list of cell objects
         self.grid = [
             [Cell(row, col) for col in range(dimension)]
@@ -56,21 +58,37 @@ class Ship:
                     dead_ends.append(cell)
         return dead_ends
 
+    def ignite_cell(self, cell):
+        """Ignite a cell and update the on-fire set"""
+        cell.on_fire = True
+        self.on_fire_cells.add(cell)
+
+    def extinguish_cell(self, cell):
+        """Extinguish a cell and update the on-fire set"""
+        cell.on_fire = False
+        self.history_fire_cells.add(cell)
+        self.on_fire_cells.remove(cell)
+
     def generate_maze(self):
         # --- Phase 1: Open up the ship ---
         # pick random initial open cell within inner area of the grid
         start_row = random.randint(1, self.dimension - 2)
         start_col = random.randint(1, self.dimension - 2)
-        cell = self.get_cell(start_row, start_col)
-        cell.open_cell()
-        self.initial_cell = cell
+        start_cell = self.get_cell(start_row, start_col)
+        start_cell.open_cell()
+        self.initial_cell = start_cell
 
-        while True:
-            # randomly open cells with one open neighbor until no more candidates
-            candidates = self.get_blocked_cells_with_one_open_neighbor()
-            if not candidates:
-                break
-            random.choice(candidates).open_cell()
+        # Initialize frontier with closed neighbors of the starting cell
+        frontier = set(start_cell.get_closed_neighbors())
+        while frontier:
+            cell = random.choice(list(frontier))
+            if cell.is_frontier():
+                cell.open_cell()
+            frontier.remove(cell)
+            # Update frontier: add neighbors of the opened cell that are now frontier candidates.
+            for neighbor in cell.get_closed_neighbors():
+                if neighbor.is_frontier():
+                    frontier.add(neighbor)
 
         open_count = sum(cell.is_open() for row in self.grid for cell in row)
         total = self.dimension * self.dimension

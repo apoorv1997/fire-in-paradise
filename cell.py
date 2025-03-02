@@ -6,6 +6,10 @@ class Cell:
         self.open = False
         self.on_fire = False
 
+    def reset_cell(self):
+        self.open = False
+        self.on_fire = False
+
     def count_open_neighbors(self):
         """Return number of open neighbors for a cell"""
         return sum(neighbor.open for neighbor in self.neighbors)
@@ -50,12 +54,6 @@ class Cell:
 
     def is_on_fire(self):
         return self.on_fire
-
-    def ignite(self):
-        self.on_fire = True
-
-    def extinguish(self):
-        self.on_fire = False
 
     def __repr__(self):
         return '⬜' if self.open else '⬛'

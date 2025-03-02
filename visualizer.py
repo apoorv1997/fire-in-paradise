@@ -23,8 +23,11 @@ class Visualizer:
         self.fire_image = pygame.transform.smoothscale(self.fire_image, (desired_size, desired_size))
         self.robot_image = pygame.transform.smoothscale(self.robot_image, (desired_size, desired_size))
 
-    def draw_grid(self, bot_active=False):
+    def draw_grid(self):
         """Draws the ship grid and overlays the fire, the button, and (if active) the robot"""
+        if not pygame.display.get_init() or self.screen is None:
+            # Reinitialize the display surface based on saved dimensions.
+            self.screen = pygame.display.set_mode((self.width, self.height))
         self.screen.fill((0, 0, 0))
 
         for row in range(self.ship.dimension):
@@ -48,7 +51,7 @@ class Visualizer:
                     self.screen.blit(self.fire_image, (ex, ey))  # draw fire image
 
                 # Draw robot image if the bot is active and on this cell
-                if bot_active and self.bot is not None and self.bot.cell.row == row and self.bot.cell.col == col:
+                if self.bot is not None and self.bot.cell.row == row and self.bot.cell.col == col:
                     ew, eh = self.robot_image.get_size()
                     ex = col * self.cell_size + (self.cell_size - ew) // 2  # center x
                     ey = row * self.cell_size + (self.cell_size - eh) // 2  # center y
@@ -61,12 +64,12 @@ class Visualizer:
         Display static representation of ship grid,
         overlaying robot's path (blue dots) and every cell that was ignited (fire image)
         """
-        self.draw_grid(bot_active=False)
+        self.draw_grid()
         if self.env is not None:
             # Overlay ignited cells
             red_fire_image = self.fire_image.copy()
 
-            for cell in self.env.history_fire:
+            for cell in self.ship.history_fire_cells:
                 row, col = cell.row, cell.col
                 cell_obj = self.ship.get_cell(row, col)
                 if not cell_obj.on_fire:
@@ -106,7 +109,7 @@ class Visualizer:
         while running and simulation_result == "ongoing":
             # Bot takes action, updating ship environment as needed before updating the grid
             simulation_result = controller.make_action()
-            self.draw_grid(bot_active=True)
+            self.draw_grid()
             if realtime:
                 clock.tick(1 / tick_interval)
             for event in pygame.event.get():
@@ -132,7 +135,7 @@ class Visualizer:
         while running and simulation_result == "ongoing":
             # Wait for user input to move the bot, updating the ship environment as needed before updating the grid
             simulation_result = controller.make_action()
-            self.draw_grid(bot_active=True)
+            self.draw_grid()
             clock.tick(30)
         if simulation_result == "failure":
             print("Robot failed!")

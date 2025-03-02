@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import copy  # for deep copying the environment
 from ship import Ship
 from environment import Environment
 from botcontroller import BotController
@@ -18,7 +19,7 @@ class StatisticsRunner:
         """
         strategies: list of bot strategy numbers to test (e.g., [1, 2, 3, 4])
         q_values: list or array of flammability parameter values (between 0 and 1)
-        trials: number of simulation runs per (strategy, q) combination
+        trials: number of simulation runs per q value (each trial is run on the same ship/env for all strategies)
         ship_dimension: grid dimension for the ship (smaller for faster simulation)
         """
         self.strategies = strategies
@@ -28,44 +29,36 @@ class StatisticsRunner:
         # To store results: a dict mapping strategy -> list of success frequencies (for each q)
         self.results = {strategy: [] for strategy in strategies}
 
-    def run_trial(self, strategy, q):
-        """
-        Run a single simulation trial using the given bot strategy and flammability parameter q.
-        Returns True if the bot reaches the button (success) or False if the bot is caught by fire.
-        """
-        # Create a new ship and generate its maze.
-        ship = Ship(self.ship_dimension)
-        ship.generate_maze()
-        # Initialize the environment with the given flammability parameter.
-        env = Environment(ship, q=q)
-        # Create a bot controller for the chosen strategy.
-        controller = BotController(env.bot, env, strategy)
-
-        # Run simulation until a terminal state is reached.
-        result = "ongoing"
-        while result == "ongoing":
-            # Get the next move from the controller (for non-manual strategies)
-            move = controller.get_next_move()
-            result = env.tick(move)
-        return result == "success"
-
     def run_experiments(self):
         """
-        For each bot strategy and for each q value, perform a number of trials,
-        record the fraction of successful trials, and print progress to the console.
+        For each flammability parameter q value, perform a number of trials.
+        In each trial, generate one ship and environment and run all strategies on copies of it.
+        Record the fraction of successful trials for each strategy and print progress to the console.
         """
-        for strategy in self.strategies:
-            success_rates = []
-            print(f"Running experiments for bot strategy {strategy}...")
-            for q in self.q_values:
-                successes = 0
-                for trial in range(self.trials):
-                    if self.run_trial(strategy, q):
-                        successes += 1
-                success_rate = successes / self.trials
-                success_rates.append(success_rate)
-                print(f"  q = {q:.2f}: success rate = {success_rate:.3f}")
-            self.results[strategy] = success_rates
+        for q in self.q_values:
+            # Initialize success count for each strategy for the current q.
+            strategy_successes = {strategy: 0 for strategy in self.strategies}
+            print(f"Running experiments for q = {q:.2f}...")
+            for trial in range(self.trials):
+                # Create a new ship and generate its maze.
+                ship = Ship(self.ship_dimension)
+                # Initialize the environment with the given flammability parameter.
+                env = Environment(ship, q=q)
+                # Run each strategy on same environment so they all see the same start state.
+                for strategy in self.strategies:
+                    controller = BotController(env.bot, env, strategy)
+                    result = "ongoing"
+                    while result == "ongoing":
+                        result = controller.make_action()
+                    if result == "success":
+                        strategy_successes[strategy] += 1
+                    env.reset()
+
+            # Record and print success rate for each strategy at this q.
+            for strategy in self.strategies:
+                success_rate = strategy_successes[strategy] / self.trials
+                self.results[strategy].append(success_rate)
+                print(f"  Strategy {strategy}: success rate = {success_rate:.3f}")
 
     def plot_results(self):
         """
@@ -79,7 +72,7 @@ class StatisticsRunner:
             plt.plot(self.q_values, self.results[strategy], marker='o', label=f'Bot Strategy {strategy}')
         plt.xlabel('Flammability Parameter (q)')
         plt.ylabel('Success Frequency')
-        plt.title('Bot Performance vs Flammability Parameter (q)')
+        plt.title(f'Bot Performance vs Flammability Parameter (q) for Ship Dim={self.ship_dimension} and {self.trials} Trials per q')
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -94,11 +87,11 @@ class StatisticsRunner:
 
 if __name__ == '__main__':
     # Define the bot strategies to test (using non-interactive, algorithmic bots)
-    strategies = [1, 2, 3, 4]
+    strategies = [1, 2, 3, 5]
 
     q_values = [0, 0.2, 0.4, 0.6, 0.8, 1]
-    # Number of trials per (strategy, q) combination (increase for smoother graphs)
-    trials = 5
+    # Number of trials per q value (each trial is run on the same ship/env for all strategies)
+    trials = 50
 
     stats_runner = StatisticsRunner(strategies, q_values, trials, ship_dimension=40)
     stats_runner.run_all()
