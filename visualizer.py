@@ -14,13 +14,14 @@ class Visualizer:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Ship Grid Visualization")
 
-        # Set a working font for rendering emojis as well as emoji size
-        emoji_font_size = int(self.cell_size * 0.6)
-        self.emoji_font = pygame.font.Font(
-            pygame.font.match_font("segoeuiemoji, noto color emoji, apple color emoji"),
-            emoji_font_size
-        )
-        self.robot_emoji = "🤖"
+        # Load image assets for fire and robot emojis.
+        self.fire_image = pygame.image.load("assets/fire.png").convert_alpha()
+        self.robot_image = pygame.image.load("assets/walle.png").convert_alpha()
+
+        # Scale images to size relative to cell size
+        desired_size = int(self.cell_size * 0.6)
+        self.fire_image = pygame.transform.smoothscale(self.fire_image, (desired_size, desired_size))
+        self.robot_image = pygame.transform.smoothscale(self.robot_image, (desired_size, desired_size))
 
     def draw_grid(self, bot_active=False):
         """Draws the ship grid and overlays the fire, the button, and (if active) the robot"""
@@ -30,63 +31,62 @@ class Visualizer:
             for col in range(self.ship.dimension):
                 cell = self.ship.get_cell(row, col)
                 rect = pygame.Rect(col * self.cell_size, row * self.cell_size, self.cell_size, self.cell_size)
-                bg_color = (255, 255, 255) if cell.open else (0, 0, 0) # white if open, black if blocked
-                pygame.draw.rect(self.screen, bg_color, rect) # draw cell fill color
-                pygame.draw.rect(self.screen, (200, 200, 200), rect, 1) # draw cell border
+                bg_color = (255, 255, 255) if cell.open else (0, 0, 0)  # white if open, black if blocked
+                pygame.draw.rect(self.screen, bg_color, rect)  # draw cell fill color
+                pygame.draw.rect(self.screen, (200, 200, 200), rect, 1)  # draw cell border
 
-                if self.env is not None and cell == self.env.button_cell: # color button cell blue
+                if self.env is not None and cell == self.env.button_cell:  # color button cell blue
                     pygame.draw.rect(self.screen, (0, 0, 255), rect)
                     pygame.draw.rect(self.screen, (200, 200, 200), rect, 1)
 
                 if cell.on_fire:
-                    # draw fire emoji if cell is on fire
-                    emoji_surface = self.emoji_font.render("🔥", True, (255, 255, 255))
-                    # This offsets the emoji so that it can still be seen when the robot is on top of it
-                    ew, eh = emoji_surface.get_size() # get emoji size
-                    ex = col * self.cell_size + self.cell_size - ew # x position
-                    ey = row * self.cell_size # y position
-                    self.screen.blit(emoji_surface, (ex, ey)) # draw emoji
+                    # Draw fire image if cell is on fire.
+                    # mage is aligned to top-right of the cell so it is still seen if robot enters the cell
+                    ew, eh = self.fire_image.get_size()  # get image dimensions
+                    ex = col * self.cell_size + self.cell_size - ew  # x position
+                    ey = row * self.cell_size  # y position
+                    self.screen.blit(self.fire_image, (ex, ey))  # draw fire image
 
-                # Draw the robot emoji if the bot is active and on this cell
+                # Draw robot image if the bot is active and on this cell
                 if bot_active and self.bot is not None and self.bot.cell.row == row and self.bot.cell.col == col:
-                    emoji_surface = self.emoji_font.render(self.robot_emoji, True, (255, 255, 255))
-                    ew, eh = emoji_surface.get_size()
-                    ex = col * self.cell_size + (self.cell_size - ew) // 2 # center x
-                    ey = row * self.cell_size + (self.cell_size - eh) // 2 # center y
-                    self.screen.blit(emoji_surface, (ex, ey))
-        pygame.display.flip() # update the display
+                    ew, eh = self.robot_image.get_size()
+                    ex = col * self.cell_size + (self.cell_size - ew) // 2  # center x
+                    ey = row * self.cell_size + (self.cell_size - eh) // 2  # center y
+                    self.screen.blit(self.robot_image, (ex, ey))  # draw robot image
+
+        pygame.display.flip()  # update display
 
     def draw_static_grid(self):
         """
-        Displays a static representation of the ship grid,
-        overlaying robot's path (blue dots) and every cell that was ignited (red fire emoji)
+        Display static representation of ship grid,
+        overlaying robot's path (blue dots) and every cell that was ignited (fire image)
         """
         self.draw_grid(bot_active=False)
         if self.env is not None:
             # Overlay ignited cells
+            red_fire_image = self.fire_image.copy()
+
             for cell in self.env.history_fire:
                 row, col = cell.row, cell.col
                 cell_obj = self.ship.get_cell(row, col)
                 if not cell_obj.on_fire:
-                    # overlay fire emoji if cell is on fire
-                    emoji_surface = self.emoji_font.render("🔥", True, (255, 0, 0))
-                    ew, eh = emoji_surface.get_size()
+                    ew, eh = red_fire_image.get_size()
                     ex = col * self.cell_size + (self.cell_size - ew) // 2
                     ey = row * self.cell_size + (self.cell_size - eh) // 2
-                    self.screen.blit(emoji_surface, (ex, ey))
+                    self.screen.blit(red_fire_image, (ex, ey))
             # Draw robot's path as small blue circles
             for cell in self.env.bot_path:
-                center = (cell.col * self.cell_size + self.cell_size // 2, cell.row * self.cell_size + self.cell_size // 2)
+                center = (cell.col * self.cell_size + self.cell_size // 2,
+                          cell.row * self.cell_size + self.cell_size // 2)
                 pygame.draw.circle(self.screen, (0, 0, 255), center, self.cell_size // 8)
-            # Draw robot's final pos
+            # Draw robot's final position
             if self.env.bot:
                 row, col = self.env.bot.cell.row, self.env.bot.cell.col
-                emoji_surface = self.emoji_font.render(self.robot_emoji, True, (255, 255, 255))
-                ew, eh = emoji_surface.get_size()
+                ew, eh = self.robot_image.get_size()
                 ex = col * self.cell_size + (self.cell_size - ew) // 2
                 ey = row * self.cell_size + (self.cell_size - eh) // 2
-                self.screen.blit(emoji_surface, (ex, ey))
-        pygame.display.flip() # update the display
+                self.screen.blit(self.robot_image, (ex, ey))
+        pygame.display.flip()  # update display
 
         while True:
             # wait for user to close the window
@@ -97,20 +97,20 @@ class Visualizer:
 
     def draw_grid_with_algorithmic_robot(self, controller, realtime, tick_interval):
         """
-        Runs the simulation in algorithmic mode
+        Runs simulation in algorithmic mode
         """
         running = True
         clock = pygame.time.Clock()
         simulation_result = "ongoing"
 
         while running and simulation_result == "ongoing":
-            # bot takes action, updating the ship environment as needed before updating the grid
+            # Bot takes action, updating ship environment as needed before updating the grid
             simulation_result = controller.make_action()
             self.draw_grid(bot_active=True)
             if realtime:
                 clock.tick(1 / tick_interval)
             for event in pygame.event.get():
-                # check for quit event
+                # Check for quit event.
                 if event.type == pygame.QUIT:
                     running = False
 
@@ -119,7 +119,7 @@ class Visualizer:
         elif simulation_result == "success":
             print("Robot succeeded!")
 
-        # display static terminal state
+        # Display static terminal state
         self.draw_static_grid()
 
     def draw_grid_with_interactive_robot(self, controller):
@@ -130,7 +130,7 @@ class Visualizer:
         clock = pygame.time.Clock()
         simulation_result = "ongoing"
         while running and simulation_result == "ongoing":
-            # wait for user input to move the bot, updating the ship environment as needed before updating the grid
+            # Wait for user input to move the bot, updating the ship environment as needed before updating the grid
             simulation_result = controller.make_action()
             self.draw_grid(bot_active=True)
             clock.tick(30)
@@ -138,5 +138,5 @@ class Visualizer:
             print("Robot failed!")
         elif simulation_result == "success":
             print("Robot succeeded!")
-        # display static terminal state
+        # Display static terminal state.
         self.draw_static_grid()
