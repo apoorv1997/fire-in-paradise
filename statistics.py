@@ -49,7 +49,7 @@ class StatisticsRunner:
                     controller = BotController(env.bot, env, strategy)
                     result = "ongoing"
                     while result == "ongoing":
-                        result = controller.make_action()
+                        result = controller.make_action(q)
                     if result == "success":
                         strategy_successes[strategy] += 1
                     env.reset()

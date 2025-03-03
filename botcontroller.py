@@ -53,7 +53,7 @@ class BotController:
     # ----------------------------------------------------------------
     # Strategy 4: More-Risk A*
     # ----------------------------------------------------------------
-    def plan_path_bot4(self):
+    def plan_path_bot4(self, q):
         """
         Replicates the 'a_star_more_risk' logic to compute a path from the bot's
         current cell to the button while considering fire spread.
@@ -63,57 +63,70 @@ class BotController:
         """
         # Get current position and goal
         m, n = self.bot.cell.row, self.bot.cell.col
-        goal = (self.env.button_cell.row, self.env.button_cell.col)
-
-        # Set up the open_set as a min-heap (f_score, (row, col))
-        open_set = [(0, (m, n))]
-        heapq.heappush(open_set, (0, (m, n)))
-
+        # goal = (self.env.button_cell.row, self.env.button_cell.col)
+        start = self.env.ship.get_cell(m, n)
+        goal = self.env.ship.get_cell(self.env.button_cell.row, self.env.button_cell.col)
+        #blocked = {self.env.ship.get_cell(r, c) for r, c in blocked_hash}
+        open_heap = []
+        g_score = {start: 0}
         came_from = {}
-        g_score = {(m, n): 0}
-        f_score = {(m, n): self.manhattan_distance((m, n), goal)}
 
-        # Directions: up, right, down, left
-        dx = [-1, 0, 1, 0]
-        dy = [0, 1, 0, -1]
-
-        rows, cols = self.env.ship.dimension, self.env.ship.dimension
-        path = []
-
-        # Compute fire spread times using the snippet's logic.
         fire_time = self.predict_fire_spread([(self.env.initial_fire_cell.row,
                                                self.env.initial_fire_cell.col)])
         arrival_time = 0
+        def heuristic(a, b):
+            return abs(a.row - b.row) + abs(a.col - b.col)
 
-        while open_set:
-            current = heapq.heappop(open_set)[1]
+        counter = 0
+        initial_f = heuristic(start, goal)
+        heapq.heappush(open_heap, (initial_f, counter, start))
+        counter += 1
+
+        while open_heap:
+            current_f, _, current = heapq.heappop(open_heap)
             if current == goal:
-                # Reconstruct the path from goal back to start.
                 path = []
                 while current in came_from:
                     path.append(current)
                     current = came_from[current]
                 path.reverse()
-                break
-
-            for i in range(4):
-                neighbor = (current[0] + dx[i], current[1] + dy[i])
-                if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols:
-                    cell = self.env.ship.get_cell(neighbor[0], neighbor[1])
-                    # Only consider neighbors that are open, not on fire, and have no burning neighbors.
-                    if cell.is_open() and (not cell.is_on_fire()) and cell.count_burning_neighbors() == 0:
-                        tentative_g_score = g_score[current] + 1
-                        arrival_time += 1
-                        fire_arrival = fire_time[neighbor[0]][neighbor[1]]
-                        if arrival_time >= fire_arrival:
-                            continue
-                        if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
-                            came_from[neighbor] = current
-                            g_score[neighbor] = tentative_g_score
-                            new_f = tentative_g_score + self.manhattan_distance(neighbor, goal) + (fire_arrival - arrival_time)
-                            f_score[neighbor] = new_f
-                            heapq.heappush(open_set, (new_f, neighbor))
+                if path and path[0] == start:
+                    path = path[1:]
+                return tuple((cell.row, cell.col) for cell in path)
+            for neighbor in current.neighbors:
+                if neighbor.is_open() and neighbor.is_open() and (not neighbor.is_on_fire()) and neighbor.count_burning_neighbors() == 0:
+                    tentative_g = g_score[current] + 1
+                    arrival_time = tentative_g
+                    fire_arrival = fire_time[neighbor.row][neighbor.col]
+                    if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g
+                        fire_weight = 0.02
+                        f_score = tentative_g + heuristic(neighbor, goal) - fire_weight * (fire_arrival)
+                        heapq.heappush(open_heap, (f_score, counter, neighbor))
+                        counter += 1
+        return tuple()
+        #path = self.smooth_path(path)
         return path
+
+
+    def smooth_path(self, path):
+        """
+        Smooth the path to avoid unnecessary detours.
+        """
+        if not path:
+            return path
+
+        smoothed_path = [path[0]]
+        for i in range(1, len(path) - 1):
+            prev = smoothed_path[-1]
+            curr = path[i]
+            next = path[i + 1]
+            if not (prev[0] == next[0] or prev[1] == next[1]):
+                smoothed_path.append(curr)
+        smoothed_path.append(path[-1])
+
+        return smoothed_path
 
     def predict_fire_spread(self, fire_starts):
         """
@@ -218,7 +231,7 @@ class BotController:
             return random.choice(valid_moves)
         return None
 
-    def get_next_move(self):
+    def get_next_move(self, q):
         """
         Return the next move direction according to the selected strategy.
         If no valid path is found, return a random valid move.
@@ -243,7 +256,7 @@ class BotController:
             next_cell = path[0]
             return self.get_direction_from_positions(self.bot.cell, next_cell)
         elif self.strategy == 4:
-            path = self.plan_path_bot4()
+            path = self.plan_path_bot4(q)
             if not path:
                 return self.get_random_valid_move()
             next_rc = path[0]
@@ -254,13 +267,13 @@ class BotController:
         else:
             return None
 
-    def make_action(self):
+    def make_action(self, q):
         """
         For manual control (strategy 0), process arrow keys.
         For algorithmic strategies, compute the next move and call env.tick(direction).
         """
         if self.strategy != 0:
-            direction = self.get_next_move()
+            direction = self.get_next_move(q)
             return self.env.tick(direction)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
