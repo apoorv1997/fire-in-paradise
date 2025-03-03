@@ -87,11 +87,11 @@ class StatisticsRunner:
 
 if __name__ == '__main__':
     # Define the bot strategies to test (using non-interactive, algorithmic bots)
-    strategies = [1, 2, 3, 5]
+    strategies = [1, 2, 3, 4]
 
     q_values = [0, 0.2, 0.4, 0.6, 0.8, 1]
     # Number of trials per q value (each trial is run on the same ship/env for all strategies)
-    trials = 50
+    trials = 500
 
     stats_runner = StatisticsRunner(strategies, q_values, trials, ship_dimension=40)
     stats_runner.run_all()

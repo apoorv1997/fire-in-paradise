@@ -18,7 +18,7 @@ def main():
     # 2: Bot 2 (replan each timestep, blocking burning cells),
     # 3: Bot 3 (replan each timestep, blocking burning cells and, if possible, cells adjacent to fire)
     # 4: Bot 4 (custom strategy)
-    strategy = 5
+    strategy = 4
 
 
     ship = Ship(ship_dimension)

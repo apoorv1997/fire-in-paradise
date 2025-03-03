@@ -1,3 +1,4 @@
+import os
 import pygame
 
 class Visualizer:
@@ -15,8 +16,9 @@ class Visualizer:
         pygame.display.set_caption("Ship Grid Visualization")
 
         # Load image assets for fire and robot emojis.
-        self.fire_image = pygame.image.load("assets/fire.png").convert_alpha()
-        self.robot_image = pygame.image.load("assets/walle.png").convert_alpha()
+        assets_path = os.path.join(os.path.dirname(__file__), 'assets')
+        self.fire_image = pygame.image.load(os.path.join(assets_path, "fire.png")).convert_alpha()
+        self.robot_image = pygame.image.load(os.path.join(assets_path, "walle.png")).convert_alpha()
 
         # Scale images to size relative to cell size
         desired_size = int(self.cell_size * 0.6)
