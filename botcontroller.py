@@ -101,8 +101,8 @@ class BotController:
                     if neighbor not in g_score or tentative_g < g_score[neighbor]:
                         came_from[neighbor] = current
                         g_score[neighbor] = tentative_g
-                        fire_weight = 0.02
-                        f_score = tentative_g + heuristic(neighbor, goal) - fire_weight * (fire_arrival)
+                        fire_weight = 0.02 # subtracting fire weight from heuristic to reduce the distance based on current state of fire spread.
+                        f_score = tentative_g + heuristic(neighbor, goal) + fire_weight * (fire_arrival)
                         heapq.heappush(open_heap, (f_score, counter, neighbor))
                         counter += 1
         return tuple()
