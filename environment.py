@@ -1,5 +1,6 @@
 import random
 from bot import Bot
+from botcontroller import BotController
 
 class Environment:
     """
@@ -72,6 +73,25 @@ class Environment:
             return "failure"
 
         return "ongoing"
+
+    def is_winnable(self, tries=2):
+        """
+        For a given environment, test all strategies. If any strategy results in a win,
+        return True (simulation winnable). Otherwise, return False.
+        """
+        for t in range(tries):
+            for strat in [1, 2, 3, 4]:
+                controller = BotController(self.bot, self, strat)
+                result = "ongoing"
+                # Run simulation until terminal state
+                while result == "ongoing":
+                    result = controller.make_action()
+                if result == "success":
+                    self.reset()
+                    return True
+                self.reset()
+        self.reset()
+        return False
 
     def reset(self):
         """

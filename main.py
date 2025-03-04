@@ -4,10 +4,8 @@ from environment import Environment
 from botcontroller import BotController
 
 def main():
-    # -- WARNING: run with Python 3.6 -- #
-
-    ship_dimension = 20  # dimension sets the nxn ship grid size
-    q = 0.6  # flammability parameter 0-1 (higher q = more flammable cells)
+    ship_dimension = 40  # dimension sets the nxn ship grid size
+    q = 0.8  # flammability parameter 0-1 (higher q = more flammable cells)
     cell_size = 20  # Size of each cell in pixels on rendered grid
     realtime = True  # Set True for real-time simulation, False for static display at terminal state
     tick_interval = 0.5 # seconds between each tick in real-time simulation

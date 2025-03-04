@@ -18,6 +18,10 @@ class Ship:
     def cell_in_bounds(self, row, col):
         return 0 <= row < self.dimension and 0 <= col < self.dimension
 
+    def distance(self, cell1, cell2):
+        # Manhattan distance
+        return abs(cell1.row - cell2.row) + abs(cell1.col - cell2.col)
+
     def set_cell_neighbors(self):
         """Set valid neighbors for each cell in the grid"""
         for row in self.grid:
@@ -26,6 +30,10 @@ class Ship:
                     nr, nc = cell.row + dr, cell.col + dc
                     if self.cell_in_bounds(nr, nc):
                         cell.neighbors.append(self.get_cell(nr, nc))
+
+    def all_cells(self):
+        """Return list of all cells"""
+        return [cell for row in self.grid for cell in row]
 
     def get_cell(self, row, col):
         if self.cell_in_bounds(row, col):
